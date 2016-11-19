@@ -11,7 +11,7 @@
 #define KEY_DOWN        80
 #define KEY_ENTER       13
 #define KEY_BS          8
-int tile_sack[100]={0};
+int tile_sack[100]={0},tile_left=100;
 int bonuscore_loc[15][15]={ {5,0,0,2,0,0,0,5,0,0,0,5,0,0,5},
                               {0,4,0,0,0,3,0,0,0,3,0,0,0,4,0},
                               {0,0,4,0,0,0,2,0,2,0,0,0,4,0,0},
@@ -44,7 +44,7 @@ char board[100][100]={" ________________________________________________________
                       "|+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+|",
                       "||   |   |DLS|   |   |   |DLS|   |DLS|   |   |   |DLS|   |   ||",
                       "|+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+|",
-                      "||TWS|   |   |DLS|   |   |   |STR|   |   |   |DLS|   |   |TWS||",
+                      "||TWS|   |   |DLS|   |   |   |   |   |   |   |DLS|   |   |TWS||",
                       "|+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+|",
                       "||   |   |DLS|   |   |   |DLS|   |DLS|   |   |   |DLS|   |   ||",
                       "|+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+|",
@@ -64,42 +64,52 @@ char board[100][100]={" ________________________________________________________
 char display_rack[5][60]={" ___________________Your_Tile_____________________",
                           "|                                                 |",
                           "|                                                 |",
-                          "| 				                  |",
+                          "|                                                 |",
                           "|_________________________________________________|"};
-void put_tile(char *rack,char key,char *p,int x,int y){
+char word_map[15][15];
+void put_tile(char *rack,char key,char preword[15][15],int x,int y,int n){
     int i;
-    if(key==KEY_BS&&(*(p+((15*y)+x))>=65&&*(p+((15*y)+x))<=90)){
+    if(key==KEY_BS&&(preword[y][x]>=63&&preword[y][x]<=90)){
         //fix board
-        walk(70,5);
-        printf("%d %d",x,y);
         walk(((x)*4)+2,(y*2)+2);
+        if(bonuscore_loc[y][x]==2)textcolor(11,0);
+        if(bonuscore_loc[y][x]==3)textcolor(1,0);
+        if(bonuscore_loc[y][x]==4)textcolor(13,0);
+        if(bonuscore_loc[y][x]==5)textcolor(12,0);
         printf("%c%c%c",board[y*2+2][x*4+2],board[y*2+2][x*4+3],board[y*2+2][x*4+4]);
+        resetcolor();
         walk(((x)*4)+3,(y*2)+2);
         //fix rack
-
-
+        for(i=0;i<strlen(rack);i++){
+            if(rack[i]=='0'){rack[i]=preword[y][x];break;}
+        }
+        //Delete preword
+        preword[y][x]='0';
     }
-    key-=32;
+    //convert capital letter
+    if(key==47)key=63;
+    else key-=32;
+    //put the tile on board
     for(i=0;i<strlen(rack);i++){
         if(rack[i]==key){
                 walk(((x)*4)+2,(y*2)+2);
                 textcolor(14,0);printf(" %c ",rack[i]);resetcolor();
                 walk(((x)*4)+3,(y*2)+2);
-                *(p+((15*y)+x))=rack[i];
+                preword[y][x]=rack[i];
                 rack[i]='0';
                 break;
         }
+        //if tile blank
     }
-
+    //update tile on rack
+    printrack(rack,n);
+    walk((x*4)+3,(y*2)+2);
 }
-
 void checkword(char *p,char word[]){
     int binary=dic/2,N,x,e=0;
     N=binary;
     while(strcmp(word,p+(N*20))!=0&&e!=8){
         x=strcmp(word,(p+(N*20)));
-        //printf("before=%d  ",x);
-        //printf("before=%-5d  word=%-20s binary=%-5d N=%-5d\n",x,(p+(N*20)),binary,N);
         switch(x){
         case 1: if(binary==0)N++;
                 else N+=(binary/2);break;
@@ -109,6 +119,7 @@ void checkword(char *p,char word[]){
         binary/=2;
         if(binary==0)e++;
     }
+    walk(70,6);
     if(e==8)printf("\n invalid word");
     else printf("\n valid word");
 }
@@ -125,61 +136,51 @@ void loaddic(char*word){
         p+=20;
     }
 }
-void printtile(char *rack){
-    int i,j;
-    char *p;
-    p=rack;
-        //printf(" %d ",strlen(rack_me));
-    textcolor(8,0);
-    for(i=0;i<7;i++){
-        for(j=0;j<3;j++){
-            walk(i*7+65,j+28);
-            if(j==0||j==2)printf(" +---+ ");
-            else {printf(" | ");textcolor(14,0);printf("%c",*(rack+i));textcolor(8,0);printf(" | ");}
-            printf("\n");
-        }
-    }
-    printf("\n\n");
-
-
-
-}
 char draw(){
     char alphabet;
     int random;
     srand(time(NULL));
-    do{
-        random=rand()%100;
-    }while(tile_sack[random]!=0);
-    tile_sack[random]=1;
-    if(random>=0&&random<9)alphabet='A';
-    if(random>=9&&random<11)alphabet='B';
-    if(random>=11&&random<13)alphabet='C';
-    if(random>=13&&random<17)alphabet='D';
-    if(random>=17&&random<29)alphabet='E';
-    if(random>=29&&random<31)alphabet='F';
-    if(random>=31&&random<34)alphabet='G';
-    if(random>=34&&random<36)alphabet='H';
-    if(random>=36&&random<45)alphabet='I';
-    if(random>=45&&random<46)alphabet='J';
-    if(random>=46&&random<47)alphabet='K';
-    if(random>=47&&random<51)alphabet='L';
-    if(random>=51&&random<53)alphabet='M';
-    if(random>=53&&random<59)alphabet='N';
-    if(random>=59&&random<67)alphabet='O';
-    if(random>=67&&random<69)alphabet='P';
-    if(random>=69&&random<70)alphabet='Q';
-    if(random>=70&&random<76)alphabet='R';
-    if(random>=76&&random<80)alphabet='S';
-    if(random>=80&&random<86)alphabet='T';
-    if(random>=86&&random<90)alphabet='U';
-    if(random>=90&&random<92)alphabet='V';
-    if(random>=92&&random<94)alphabet='W';
-    if(random>=94&&random<95)alphabet='X';
-    if(random>=95&&random<97)alphabet='Y';
-    if(random>=97&&random<98)alphabet='Z';
-    if(random>=98&&random<100)alphabet=32;
+    if(tile_left!=0){
+        do{
+            random=rand()%100;
+        }while(tile_sack[random]!=0);
+        tile_left--;
+        tile_sack[random]=1;
+        if(random>=0&&random<9)alphabet='A';
+        if(random>=9&&random<11)alphabet='B';
+        if(random>=11&&random<13)alphabet='C';
+        if(random>=13&&random<17)alphabet='D';
+        if(random>=17&&random<29)alphabet='E';
+        if(random>=29&&random<31)alphabet='F';
+        if(random>=31&&random<34)alphabet='G';
+        if(random>=34&&random<36)alphabet='H';
+        if(random>=36&&random<45)alphabet='I';
+        if(random>=45&&random<46)alphabet='J';
+        if(random>=46&&random<47)alphabet='K';
+        if(random>=47&&random<51)alphabet='L';
+        if(random>=51&&random<53)alphabet='M';
+        if(random>=53&&random<59)alphabet='N';
+        if(random>=59&&random<67)alphabet='O';
+        if(random>=67&&random<69)alphabet='P';
+        if(random>=69&&random<70)alphabet='Q';
+        if(random>=70&&random<76)alphabet='R';
+        if(random>=76&&random<80)alphabet='S';
+        if(random>=80&&random<86)alphabet='T';
+        if(random>=86&&random<90)alphabet='U';
+        if(random>=90&&random<92)alphabet='V';
+        if(random>=92&&random<94)alphabet='W';
+        if(random>=94&&random<95)alphabet='X';
+        if(random>=95&&random<97)alphabet='Y';
+        if(random>=97&&random<98)alphabet='Z';
+        if(random>=98&&random<100)alphabet='?';
+    }else alphabet='0';
     return alphabet;
+}
+void fillrack(char *r){
+    int i;
+    for(i=0;i<7;i++,r++){
+        if(*r=='0')*r=draw();
+    }
 }
 void printboard(){
     int i,j;
@@ -205,9 +206,72 @@ void printboard(){
     }
     printf("\n\n");
 }
+void printrack(char *r,int n){
+    int i;
+    for(i=0;i<5;i++){
+        walk(64,i+27);
+        textcolor(8,0);
+        if(i==0){printf(" ____________________",n+1);
+                textcolor(10,0);printf("Player %d",n+1);textcolor(8,0);
+                printf("_____________________\n");
+                }
+        else if(i==4)printf("|_________________________________________________|");
+        else printf("|                                                 |\n");
+        //printf("%s\n",display_rack[i]);
+        resetcolor();
+    }
+        printtile(r);
+}
+void printtile(char *r){
+    int i,j,c=0,sc;//special_c
+    char rack_out[8];
+    textcolor(8,0);
+    for(i=0;i<7;i++,r++){
+        if(*r>=63&&*r<=90){rack_out[c]=*r;c++;}
+    }
+    rack_out[c]='\0';
+    for(i=0;i<strlen(rack_out);i++){
+        for(j=0;j<3;j++){
+            walk(i*7+65+(21-3*c),j+28);
+            if(j==0||j==2)printf(" +---+ ");
+            else {printf(" | ");textcolor(14,0);printf("%c",rack_out[i]);textcolor(8,0);printf(" | ");}
+            printf("\n");
+        }
+    }
+    printf("\n\n");
+}
+int endgame(int n,char*r){
+    int i,j,c=0,e=0;
+    for(i=0;i<n;i++,r+=8){
+        for(j=0;j<7;j++){
+            if(*(r+j)>=63&&*(r+j)<=90)c++;
+        }
+        if(c==0)e=1;
+    }
+    return e;
+}
+int rule_check(int turn,int player,char preword[15][15]){
+    int i,j,e=0;
+    //rule 1 : the first turn. the word must place on heart(center of the board)
+    if(turn==0&&player==0){
+        if(preword[7][7]!=0)e=1;
+        else{
+            walk(70,23);printf("the game's first word always needs one\n");
+            walk(70,24);printf("       letter on center square\n");
+            walk(70,25);printf("          give it another ago");
+            getch();
+            walk(70,23);printf("                                      ");
+            walk(70,24);printf("                                      ");
+            walk(70,25);printf("                                      ");
+            }
+    }else e=1;
+    //rule 2 : the tile that you put,must be touching or in the same line
+
+    return e;
+}
 void main(){
     int i,j,player=2,*score;
-    char *rack,word_map[15][15],preword[15][15]={};
+    char *rack,preword[15][15]={'0'};
     char *dictionary,*p,word[20];
     rack=(char*)malloc(sizeof(char)*8*player);
     dictionary = (char *)malloc(dic*20);
@@ -222,51 +286,59 @@ void main(){
             }
     }
     p=rack;
-
-
-    //print rack
-    for(i=0;i<5;i++){
-        walk(64,i+27);
-        textcolor(8,0);
-        printf("%s\n",display_rack[i]);
-        resetcolor();
-    }
-    printtile(rack);
     //load dictionnary
     loaddic(dictionary);
-
     //------------main game---------------
-    //cursor movement and put tile
     char key;
-    int x=7,y=7;
+    int x=7,y=7,n,end,rule,correct,turn=0,b=0;
+    end=endgame(player,rack);
+    p=rack;
+    while(end!=1){
+        //x=7;y=7;
+        p=rack;
+        for(n=0;n<2;n++,p+=8){
+                rule=0;correct=0;
+                memset(preword,'0', 225);
+                //print rack
+                printrack(p,n);
+                walk((x*4)+3,(y*2)+2);
+                fflush(stdin);
+                while(rule!=1||correct!=1){
+                    do{
+                        fflush(stdin);
+                        switch(key=getch()){
+                        case KEY_UP   :if(y>0)walk((x*4)+3,((--y)*2)+2);break;
+                        case KEY_DOWN :if(y<14)walk((x*4)+3,((++y)*2)+2);break;
+                        case KEY_LEFT :if(x>0)walk(((--x)*4)+3,(y*2)+2);break;
+                        case KEY_RIGHT:if(x<14)walk(((++x)*4)+3,(y*2)+2);break;
+                        default:put_tile(p,key,&preword,x,y,n);
+                        }
+                    }while(key!=KEY_ENTER);
+                    //check rule
 
-    walk((x*4)+3,(x*2)+2);
+                    rule=rule_check(turn,n,preword);
 
-    do{
-        fflush(stdin);
-        //getch();
-        //getch();
-        switch(key=getch()){
-        case KEY_UP   :if(y>0)walk((x*4)+3,((--y)*2)+2);break;
-        case KEY_DOWN :if(y<14)walk((x*4)+3,((++y)*2)+2);break;
-        case KEY_LEFT :if(x>0)walk(((--x)*4)+3,(y*2)+2);break;
-        case KEY_RIGHT:if(x<14)walk(((++x)*4)+3,(y*2)+2);break;
-        default:put_tile(rack,key,&preword,x,y);
-       }
+                    correct=1;
 
-    }while(key!=KEY_ENTER);
+                    //rule_check(i,j,&preword);
+                    //check word
 
-    int c=0;
-    for(i=0;i<15;i++){
-        for(j=0;j<15;j++){
-            if(preword[i][j]>=65&&preword[i][j]<=90){word[c]=preword[i][j];c++;}
-            word[c+1]='\0';
+                }
+                //mege
+                //find word
+                /*int c=0;
+                for(i=0;i<15;i++){
+                    for(j=0;j<15;j++){
+                        if(preword[i][j]>=65&&preword[i][j]<=90){word[c]=preword[i][j];c++;}
+                        word[c+1]='\0';
+                    }
+                }*/
+                fillrack(p);
         }
+        end=endgame(player,rack);
+        turn++;
     }
-    walk(70,5);
-    printf(" %s\n ",word);
-    checkword(dictionary,word);
-    walk(70,40);
+
     //getch();
 
 
