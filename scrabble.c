@@ -110,8 +110,8 @@ void put_tile(char *rack,char key,int x,int y,int n){
     printrack(rack,n);
     walk((x*4)+3,(y*2)+2);
 }
-void checkword(char *p,char word[]){
-    int binary=dic/2,N,x,e=0;
+int checkword(char *p,char *word){
+    int binary=dic/2,N,x,e=0,correct;
     N=binary;
     while(strcmp(word,p+(N*20))!=0&&e!=8){
         x=strcmp(word,(p+(N*20)));
@@ -125,8 +125,9 @@ void checkword(char *p,char word[]){
         if(binary==0)e++;
     }
     walk(70,6);
-    if(e==8)printf("\n invalid word");
-    else printf("\n valid word");
+    if(e==8){printf("invalid word");correct=0;}
+    else {printf("valid word");correct=1;}
+    return correct;
 }
 void loaddic(char*word){
     FILE *fp;
@@ -268,6 +269,7 @@ int rule_check(int turn,int player){
             walk(70,23);printf("                                      ");
             walk(70,24);printf("                                      ");
             walk(70,25);printf("                                      ");
+            e=0;
             }
     }else e=1;
     //rule 2 : the tile that you put,must be touching or in the same line
@@ -391,20 +393,21 @@ void main(){
         //x=7;y=7;
         p=rack;
         for(n=0;n<2;n++,p+=8){
-                rule=0;correct=0;
+                rule=0;correct=0;b=0;
                 memset(preword,'0', 225);
                 //print rack
                 printrack(p,n);
                 walk((x*4)+3,(y*2)+2);
                 fflush(stdin);
                 while(rule!=1||correct!=1){
+                    walk(70,20);printf("%d %d",rule,correct);
                     //----------------------build temp array-------------------
-                    if(rule==0&&correct==0){for(i=0;i<15;i++){
-                                                for(j=0;j<15;j++){
-                                                    wpos_temp[i][j]=wpos[i][j];
-                                                    wmap_temp[i][j]=wmap[i][j];
-                                                }
-                                            }
+                    if(b==0){for(i=0;i<15;i++){
+                                    for(j=0;j<15;j++){
+                                            wpos_temp[i][j]=wpos[i][j];
+                                            wmap_temp[i][j]=wmap[i][j];
+                                    }
+                            }
                     }//--------------------------------------------------------
                     do{
                         fflush(stdin);
@@ -420,10 +423,16 @@ void main(){
 
                     rule=rule_check(turn,n);
 
-                    correct=1;
-
-                    //rule_check(i,j,&preword);
-                    //check word
+                    //find word
+                    char *w;
+                    word=(char*)malloc(sizeof(char)*16*5);
+                    memset(word,'\0',16*5);
+                    findword(word);
+                    w=word;
+                    for(i=0;i<5;i++,w+=16){
+                        if(strlen(w))correct=checkword(dictionary,w);
+                    }
+                    b=1;
                 }
                 //---------------merge array----------------
                 for(i=0;i<15;i++){
@@ -434,18 +443,6 @@ void main(){
                         }
                     }
                 }//-----------------------------------------
-
-                //find word
-                char *w;
-                word=(char*)malloc(sizeof(char)*16*5);
-                findword(word);
-                w=word;
-                printf("5555555");
-                getch();
-                for(i=0;i<5;i++,w+=16){
-                    walk(70,20+i);
-                    printf("%s\n",w);
-                }
                 fillrack(p);
         }
         end=endgame(player,rack);
