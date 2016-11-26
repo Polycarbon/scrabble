@@ -11,6 +11,8 @@
 #define KEY_DOWN        80
 #define KEY_ENTER       13
 #define KEY_BS          8
+int wpos[15][15]={0},wpos_temp[15][15]={0};
+char wmap[15][15],wmap_temp[15][15];
 int tile_sack[100]={0},tile_left=100;
 int bonuscore_loc[15][15]={ {5,0,0,2,0,0,0,5,0,0,0,5,0,0,5},
                               {0,4,0,0,0,3,0,0,0,3,0,0,0,4,0},
@@ -27,7 +29,6 @@ int bonuscore_loc[15][15]={ {5,0,0,2,0,0,0,5,0,0,0,5,0,0,5},
                               {0,0,4,0,0,0,2,0,2,0,0,0,4,0,0},
                               {0,4,0,0,0,3,0,0,0,3,0,0,0,4,0},
                               {5,0,0,2,0,0,0,5,0,0,0,2,0,0,5}};
-
 char board[100][100]={" _____________________________________________________________",
                       "|+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+|",
                       "||TWS|   |   |DLS|   |   |   |TWS|   |   |   |DLS|   |   |TWS||",
@@ -66,10 +67,10 @@ char display_rack[5][60]={" ___________________Your_Tile_____________________",
                           "|                                                 |",
                           "|                                                 |",
                           "|_________________________________________________|"};
-char word_map[15][15];
-void put_tile(char *rack,char key,char preword[15][15],int x,int y,int n){
+
+void put_tile(char *rack,char key,int x,int y,int n){
     int i;
-    if(key==KEY_BS&&(preword[y][x]>=63&&preword[y][x]<=90)){
+    if(key==KEY_BS&&(wmap_temp[y][x]>=63&&wmap_temp[y][x]<=90)){
         //fix board
         walk(((x)*4)+2,(y*2)+2);
         if(bonuscore_loc[y][x]==2)textcolor(11,0);
@@ -81,25 +82,29 @@ void put_tile(char *rack,char key,char preword[15][15],int x,int y,int n){
         walk(((x)*4)+3,(y*2)+2);
         //fix rack
         for(i=0;i<strlen(rack);i++){
-            if(rack[i]=='0'){rack[i]=preword[y][x];break;}
+            if(rack[i]=='0'){rack[i]=wmap_temp[y][x];break;}
         }
-        //Delete preword
-        preword[y][x]='0';
+        //Delete wmap_temp
+        wmap_temp[y][x]='0';
+        wpos_temp[y][x]=0;
     }
     //convert capital letter
     if(key==47)key=63;
     else key-=32;
     //put the tile on board
-    for(i=0;i<strlen(rack);i++){
-        if(rack[i]==key){
-                walk(((x)*4)+2,(y*2)+2);
-                textcolor(14,0);printf(" %c ",rack[i]);resetcolor();
-                walk(((x)*4)+3,(y*2)+2);
-                preword[y][x]=rack[i];
-                rack[i]='0';
-                break;
+    if(wpos_temp[y][x]==0){
+        for(i=0;i<strlen(rack);i++){
+            if(rack[i]==key){
+                    walk(((x)*4)+2,(y*2)+2);
+                    textcolor(14,0);printf(" %c ",rack[i]);resetcolor();
+                    walk(((x)*4)+3,(y*2)+2);
+                    wmap_temp[y][x]=rack[i];
+                    wpos_temp[y][x]=1;
+                    rack[i]='0';
+                    break;
+            }
+            //if tile blank
         }
-        //if tile blank
     }
     //update tile on rack
     printrack(rack,n);
@@ -250,11 +255,11 @@ int endgame(int n,char*r){
     }
     return e;
 }
-int rule_check(int turn,int player,char preword[15][15]){
+int rule_check(int turn,int player){
     int i,j,e=0;
     //rule 1 : the first turn. the word must place on heart(center of the board)
     if(turn==0&&player==0){
-        if(preword[7][7]!=0)e=1;
+        if(wpos_temp[7][7]!=0)e=1;
         else{
             walk(70,23);printf("the game's first word always needs one\n");
             walk(70,24);printf("       letter on center square\n");
@@ -269,10 +274,101 @@ int rule_check(int turn,int player,char preword[15][15]){
 
     return e;
 }
+void cpyarr(){
+    int i,j;
+    for(i=0;i<15;i++){
+        for(j=0;j<15;j++){
+            wpos_temp[i][j]=wpos[i][j];
+            wmap_temp[i][j]=wmap[i][j];
+        }
+    }
+}
+void mergearr(){
+    int i,j;
+    for(i=0;i<15;i++){
+        for(j=0;j<15;j++){
+            if(wpos_temp[i][j]!=0){
+                wpos[i][j]=wpos_temp[i][j];
+                wmap[i][j]=wmap_temp[i][j];
+            }
+        }
+    }
+}
+void findword(char *word){
+    int i,j,c,t,b,x,y;
+    char letter[16];
+    for(i=0;i<15;i++){
+        c=0;
+        for(j=0;j<15;j++){
+            if(wpos_temp[i][j]==2)c++;
+        }
+        if(c>1){t=1;b=0;break;}
+        else {b=1;t=0;}
+    }
+    //check tree
+
+    for(i=0;i<15;i++){
+        for(j=0;j<15;j++,word+=16){
+        if(wpos_temp[i][j]==1){
+            y=i;x=j;
+            findh(&x,&y,t);
+
+            collectw(x,y,b,&letter);
+            printf("%s",letter);
+            break;
+        }
+    }
+    }
+
+    //check branch
+    for(i=0;i<15;i++){
+        for(j=0;j<15;j++,word+=16){
+        if(wpos_temp[i][j]==1){
+            y=i;x=j;
+            findh(&x,&y,b);
+            collectw(x,y,b,&letter);
+            delay(500);
+            printf("%s",letter);
+        }
+    }
+    }
+}
+void findh(int *x,int*y,int w){
+    if(w==0){
+    while(wpos_temp[*y-1][*x]!=0){
+        *y-=1;
+    }
+    }//find vertical
+    if(w==1){
+    while(wpos_temp[*y][*x-1]!=0){
+        *x-=1;
+    }
+    }//find horizontal
+}
+void collectw(int x,int y,int w,char *letter){
+    int i=0;
+    if(w==0){
+    while(wpos_temp[y+1][x]!=0){
+        *(letter+i)=wmap_temp[y][x];
+        i++;
+        y++;
+    }
+    }//find vertical
+    if(w==1){
+    while(wpos_temp[y][x+1]!=0){
+        *(letter+i)=wmap_temp[y][x];
+        i++;
+        x++;
+
+    }
+    }//find horizontal
+    *(letter+i)='\0';
+
+}
 void main(){
     int i,j,player=2,*score;
     char *rack,preword[15][15]={'0'};
-    char *dictionary,*p,word[20];
+    char *dictionary,*p,*word;;
     rack=(char*)malloc(sizeof(char)*8*player);
     dictionary = (char *)malloc(dic*20);
     score=(int*)malloc(sizeof(int)*2);
@@ -304,6 +400,14 @@ void main(){
                 walk((x*4)+3,(y*2)+2);
                 fflush(stdin);
                 while(rule!=1||correct!=1){
+                    //----------------------build temp array-------------------
+                    if(rule==0&&correct==0){for(i=0;i<15;i++){
+                                                for(j=0;j<15;j++){
+                                                    wpos_temp[i][j]=wpos[i][j];
+                                                    wmap_temp[i][j]=wmap[i][j];
+                                                }
+                                            }
+                    }//--------------------------------------------------------
                     do{
                         fflush(stdin);
                         switch(key=getch()){
@@ -311,28 +415,37 @@ void main(){
                         case KEY_DOWN :if(y<14)walk((x*4)+3,((++y)*2)+2);break;
                         case KEY_LEFT :if(x>0)walk(((--x)*4)+3,(y*2)+2);break;
                         case KEY_RIGHT:if(x<14)walk(((++x)*4)+3,(y*2)+2);break;
-                        default:put_tile(p,key,&preword,x,y,n);
+                        default:put_tile(p,key,x,y,n);
                         }
                     }while(key!=KEY_ENTER);
                     //check rule
 
-                    rule=rule_check(turn,n,preword);
+                    rule=rule_check(turn,n);
 
                     correct=1;
 
                     //rule_check(i,j,&preword);
                     //check word
-
                 }
-                //mege
-                //find word
-                /*int c=0;
+                //---------------merge array----------------
                 for(i=0;i<15;i++){
                     for(j=0;j<15;j++){
-                        if(preword[i][j]>=65&&preword[i][j]<=90){word[c]=preword[i][j];c++;}
-                        word[c+1]='\0';
+                        if(wpos_temp[i][j]!=0){
+                            wpos[i][j]=2;
+                            wmap[i][j]=wmap_temp[i][j];
+                        }
                     }
-                }*/
+                }//-----------------------------------------
+
+                //find word
+                char *w;
+                word=(char*)malloc(sizeof(char)*16*5);
+                findword(word);
+                w=word;
+                for(i=0;i<5;i++,w+=16){
+                    walk(60,20+i);
+                    printf("%s\n",*w);
+                }
                 fillrack(p);
         }
         end=endgame(player,rack);
@@ -342,7 +455,7 @@ void main(){
     //getch();
 
 
-
+    free(word);
     free(dictionary);
     free(score);
 
