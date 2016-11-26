@@ -271,7 +271,6 @@ int rule_check(int turn,int player){
             }
     }else e=1;
     //rule 2 : the tile that you put,must be touching or in the same line
-
     return e;
 }
 void cpyarr(){
@@ -306,29 +305,29 @@ void findword(char *word){
         else {b=1;t=0;}
     }
     //check tree
-
     for(i=0;i<15;i++){
-        for(j=0;j<15;j++,word+=16){
+        for(j=0;j<15;j++){
         if(wpos_temp[i][j]==1){
             y=i;x=j;
             findh(&x,&y,t);
+            collectw(x,y,t,&letter);
+            walk(70,15);
+            printf(" %s",letter);
+            word+=16;
 
-            collectw(x,y,b,&letter);
-            printf("%s",letter);
             break;
         }
     }
     }
-
+    getch();
     //check branch
     for(i=0;i<15;i++){
-        for(j=0;j<15;j++,word+=16){
+        for(j=0;j<15;j++){
         if(wpos_temp[i][j]==1){
             y=i;x=j;
             findh(&x,&y,b);
             collectw(x,y,b,&letter);
-            delay(500);
-            printf("%s",letter);
+            if(strlen(letter)>1){strcpy(word,letter);word+=16;}
         }
     }
     }
@@ -348,22 +347,20 @@ void findh(int *x,int*y,int w){
 void collectw(int x,int y,int w,char *letter){
     int i=0;
     if(w==0){
-    while(wpos_temp[y+1][x]!=0){
+    while(wpos_temp[y][x]!=0){
         *(letter+i)=wmap_temp[y][x];
         i++;
         y++;
     }
     }//find vertical
     if(w==1){
-    while(wpos_temp[y][x+1]!=0){
+    while(wpos_temp[y][x]!=0){
         *(letter+i)=wmap_temp[y][x];
         i++;
         x++;
-
     }
     }//find horizontal
     *(letter+i)='\0';
-
 }
 void main(){
     int i,j,player=2,*score;
