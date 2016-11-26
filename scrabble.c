@@ -294,66 +294,66 @@ void mergearr(){
     }
 }
 void findword(char *word){
-    int i,j,c,t,b,x,y;
-    char letter[16];
+    int i,j,c,x,y;
+    char letter[16],t,b;
     for(i=0;i<15;i++){
         c=0;
         for(j=0;j<15;j++){
-            if(wpos_temp[i][j]==2)c++;
+            if(wpos_temp[i][j]==1)c++;
         }
-        if(c>1){t=1;b=0;break;}
-        else {b=1;t=0;}
+        if(c>1){t='h';b='v';break;}
+        else {b='h';t='v';}
     }
+    //h=horizontal
+    //v=vertical
     //check tree
     for(i=0;i<15;i++){
         for(j=0;j<15;j++){
         if(wpos_temp[i][j]==1){
             y=i;x=j;
+            walk(70,15);
             findh(&x,&y,t);
             collectw(x,y,t,&letter);
-            walk(70,15);
-            printf(" %s",letter);
+            strcpy(word,letter);
             word+=16;
-
             break;
         }
     }
     }
-    getch();
     //check branch
     for(i=0;i<15;i++){
         for(j=0;j<15;j++){
-        if(wpos_temp[i][j]==1){
-            y=i;x=j;
-            findh(&x,&y,b);
-            collectw(x,y,b,&letter);
-            if(strlen(letter)>1){strcpy(word,letter);word+=16;}
+            if(wpos_temp[i][j]==1){
+                y=i;x=j;
+                findh(&x,&y,b);
+                collectw(x,y,b,&letter);
+                if(strlen(letter)>1){strcpy(word,letter);word+=16;}
+            }
         }
     }
-    }
 }
-void findh(int *x,int*y,int w){
-    if(w==0){
+void findh(int *x,int*y,char w){
+    if(w=='v'){
     while(wpos_temp[*y-1][*x]!=0){
         *y-=1;
     }
     }//find vertical
-    if(w==1){
+    if(w=='h'){
     while(wpos_temp[*y][*x-1]!=0){
         *x-=1;
     }
     }//find horizontal
 }
-void collectw(int x,int y,int w,char *letter){
+void collectw(int x,int y,char w,char *letter){
     int i=0;
-    if(w==0){
+    if(w=='v'){
     while(wpos_temp[y][x]!=0){
         *(letter+i)=wmap_temp[y][x];
         i++;
         y++;
     }
     }//find vertical
-    if(w==1){
+    if(w=='h'){
     while(wpos_temp[y][x]!=0){
         *(letter+i)=wmap_temp[y][x];
         i++;
@@ -361,6 +361,7 @@ void collectw(int x,int y,int w,char *letter){
     }
     }//find horizontal
     *(letter+i)='\0';
+    //printf("a=(%d %d) ",x,y);
 }
 void main(){
     int i,j,player=2,*score;
@@ -439,9 +440,11 @@ void main(){
                 word=(char*)malloc(sizeof(char)*16*5);
                 findword(word);
                 w=word;
+                printf("5555555");
+                getch();
                 for(i=0;i<5;i++,w+=16){
-                    walk(60,20+i);
-                    printf("%s\n",*w);
+                    walk(70,20+i);
+                    printf("%s\n",w);
                 }
                 fillrack(p);
         }
